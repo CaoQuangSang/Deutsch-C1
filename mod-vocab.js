@@ -38,6 +38,12 @@
         { id: 'v_c1_3', level: 'C1', topic: 'Học thuật', word: 'evaluieren', meaning: 'Đánh giá định lượng', exampleDe: 'Die Ergebnisse werden wissenschaftlich evaluiert.', exampleVi: 'Các kết quả được đánh giá về mặt khoa học.' }
     ];
 
+    const GROQ_MODELS = [
+        'llama-3.1-8b-instant',
+        'llama-3.3-70b-versatile',
+        'gemma2-9b-it'
+    ];
+
     // 3. State quản lý dữ liệu
     let aiVocabList = JSON.parse(localStorage.getItem('ds_ai_vocab_list') || '[]');
     let masteredState = new Set(JSON.parse(localStorage.getItem('ds_mastered_vocab') || '[]'));
@@ -61,7 +67,35 @@
         return [...aiVocabList, ...BASE_VOCAB_DATA];
     }
 
-    // 4. Hàm gọi Groq API (Llama 3.3 70B) để tự động sinh từ vựng
+    async function callGroqWithModel(apiKey, model, prompt) {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: 'system', content: 'You are a helpful German language teacher. Always respond with valid JSON.' },
+                    { role: 'user', content: prompt }
+                ],
+                response_format: { type: 'json_object' },
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            const msg = data.error?.message || 'Lỗi kết nối Groq API';
+            const err = new Error(msg);
+            err.status = response.status;
+            throw err;
+        }
+        return data;
+    }
+
+    // 4. Hàm gọi Groq API để tự động sinh từ vựng
     async function generateVocabWithAI() {
         const keyInput = document.getElementById('ai-vocab-key');
         const levelInput = document.getElementById('ai-vocab-level');
@@ -105,26 +139,24 @@ Yêu cầu:
 }`;
 
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: 'system', content: 'You are a helpful German language teacher. Always respond with valid JSON.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    response_format: { type: 'json_object' },
-                    temperature: 0.7
-                })
-            });
+            let data = null;
+            let usedModel = '';
+            let lastErr = null;
 
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error?.message || 'Lỗi kết nối Groq API');
+            for (const model of GROQ_MODELS) {
+                try {
+                    data = await callGroqWithModel(apiKey, model, prompt);
+                    usedModel = model;
+                    break;
+                } catch (e) {
+                    lastErr = e;
+                    const isModelIssue = /does not exist|do not have access|decommissioned|model_not_found/i.test(e.message);
+                    if (!isModelIssue) throw e;
+                }
+            }
+
+            if (!data) {
+                throw lastErr || new Error('Không tìm thấy model Groq khả dụng.');
             }
 
             const rawText = data.choices?.[0]?.message?.content || '{}';
@@ -150,7 +182,7 @@ Yêu cầu:
             localStorage.setItem('ds_ai_vocab_list', JSON.stringify(aiVocabList));
 
             currentLvl = 'Tất cả';
-            aiStatusMsg = `✅ Đã thêm thành công ${newItems.length} từ vựng mới chủ đề "${topic}"!`;
+            aiStatusMsg = `✅ Đã thêm thành công ${newItems.length} từ vựng mới chủ đề "${topic}" (Model: ${usedModel})!`;
         } catch (err) {
             console.error(err);
             aiStatusMsg = `❌ Lỗi: ${err.message}`;
