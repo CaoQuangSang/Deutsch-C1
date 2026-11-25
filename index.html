@@ -1,55 +1,364 @@
-Hãy mở file index.html trên GitHub, chọn chỉnh sửa và dán đoạn mã này vào để nhúng toàn bộ 5 module hoạt động cùng nhau:
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-slate-900">
+<html lang="vi" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeutschSprung B2 - Nền tảng Học Tiếng Đức Toàn Diện</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Thanh cuộn gọn gàng */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 9999px; }
     </style>
 </head>
-<body class="h-full text-slate-100 flex flex-col">
-    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent">
-                DeutschSprung B2
-            </h1>
-            <nav id="nav-tabs" class="space-x-2">
-                <button onclick="switchTab('dashboard')" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded">Tổng quan</button>
-                <button onclick="switchTab('vocab')" class="px-3 py-1 hover:bg-slate-700 rounded">Từ vựng</button>
-                <button onclick="switchTab('grammar')" class="px-3 py-1 hover:bg-slate-700 rounded">Ngữ pháp</button>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
+
+    <div class="flex h-full">
+        <!-- Lớp phủ nền tối khi mở menu trên điện thoại -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+        <!-- SIDEBAR BÊN TRÁI -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+            <!-- Logo -->
+            <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20 text-white font-extrabold text-lg">
+                        DS
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-amber-500 to-red-500 bg-clip-text text-transparent">
+                            DeutschSprung
+                        </h1>
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Goethe / Telc B2</span>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Menu điều hướng -->
+            <nav id="nav-tabs" class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <p class="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Học tập</p>
+                
+                <button data-tab="dashboard" onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left">
+                    <i class="fa-solid fa-house w-5 text-center"></i>
+                    <span>Tổng quan</span>
+                </button>
+                <button data-tab="vocab" onclick="switchTab('vocab')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left">
+                    <i class="fa-solid fa-layer-group w-5 text-center"></i>
+                    <span>Kho từ vựng</span>
+                </button>
+                <button data-tab="grammar" onclick="switchTab('grammar')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left">
+                    <i class="fa-solid fa-book-open w-5 text-center"></i>
+                    <span>Ngữ pháp B2</span>
+                </button>
+
+                <p class="px-3 pt-4 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Thực hành</p>
+
+                <button data-tab="skills" onclick="switchTab('skills')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left">
+                    <i class="fa-solid fa-headphones w-5 text-center"></i>
+                    <span>4 Kỹ năng</span>
+                </button>
+                <button data-tab="exam" onclick="switchTab('exam')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left">
+                    <i class="fa-solid fa-stopwatch w-5 text-center"></i>
+                    <span>Luyện đề B2</span>
+                </button>
             </nav>
+
+            <!-- Chân Sidebar: Streak & Dark Mode -->
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">🔥</span>
+                        <div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Chuỗi ngày học</div>
+                            <div class="font-bold text-amber-500"><span id="streak-count">1</span> ngày liên tiếp</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition text-sm font-medium">
+                    <span class="flex items-center gap-2">
+                        <i id="theme-icon" class="fa-solid fa-moon text-indigo-400"></i>
+                        <span id="theme-text">Chế độ tối</span>
+                    </span>
+                    <i class="fa-solid fa-repeat text-xs text-slate-400"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- KHU VỰC NỘI DUNG CHÍNH -->
+        <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+            <!-- Thanh Header trên cùng -->
+            <header class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 flex items-center justify-between shrink-0 z-30">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <h2 id="page-title" class="text-lg font-bold tracking-tight">Tổng quan</h2>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Mục tiêu: B2 Zertifikat
+                    </span>
+                </div>
+            </header>
+
+            <!-- Nội dung cuộn được -->
+            <main id="main-content" class="flex-1 overflow-y-auto p-4 lg:p-8">
+                <div class="max-w-6xl mx-auto">
+
+                    <!-- 1. DASHBOARD -->
+                    <section id="dashboard" class="space-y-6 fade-in">
+                        <!-- Banner chào mừng -->
+                        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-rose-600 p-6 lg:p-8 text-white shadow-xl">
+                            <div class="relative z-10 max-w-2xl">
+                                <span id="german-greeting" class="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-3">
+                                    Guten Tag! 🇩🇪
+                                </span>
+                                <h3 class="text-2xl lg:text-3xl font-extrabold mb-2">Chào mừng bạn trở lại với DeutschSprung B2</h3>
+                                <p class="text-white/85 text-sm lg:text-base mb-5">
+                                    Duy trì 20 phút mỗi ngày để làm chủ cấu trúc câu phức, từ vựng học thuật và phản xạ đề thi B2.
+                                </p>
+                                <!-- Thanh tiến độ B2 -->
+                                <div class="bg-black/20 rounded-xl p-4 backdrop-blur-sm">
+                                    <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                        <span>Tiến độ lộ trình B2</span>
+                                        <span id="overall-progress-text">15%</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
+                                        <div id="overall-progress-bar" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 15%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-graduation-cap absolute -right-6 -bottom-6 text-9xl text-white/10 rotate-12 pointer-events-none"></i>
+                        </div>
+
+                        <!-- Lưới 4 thẻ truy cập nhanh -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                            <div onclick="switchTab('vocab')" class="cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <div class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                                <h4 class="font-bold text-base mb-1">Kho từ vựng B2</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Học từ theo chủ đề, kèm ví dụ & phát âm.</p>
+                            </div>
+
+                            <div onclick="switchTab('grammar')" class="cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <div class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-book-open"></i>
+                                </div>
+                                <h4 class="font-bold text-base mb-1">Ngữ pháp trọng tâm</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Konjunktiv II, Passiv, Nomen-Verb...</p>
+                            </div>
+
+                            <div onclick="switchTab('skills')" class="cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-headphones"></i>
+                                </div>
+                                <h4 class="font-bold text-base mb-1">Luyện 4 Kỹ năng</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Lesen, Hören, Schreiben, Sprechen.</p>
+                            </div>
+
+                            <div onclick="switchTab('exam')" class="cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 rounded-2xl p-5 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                <div class="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-stopwatch"></i>
+                                </div>
+                                <h4 class="font-bold text-base mb-1">Thi thử B2</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Đề chuẩn cấu trúc & chấm điểm nhanh.</p>
+                            </div>
+                        </div>
+
+                        <!-- Từ vựng B2 của ngày (Có nút phát âm thật) -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-amber-500/15 text-amber-500">Wort des Tages</span>
+                                    <span class="text-xs text-slate-400">Cấp độ B2</span>
+                                </div>
+                                <h4 id="wotd-word" class="text-xl font-bold text-indigo-500 dark:text-indigo-400">die Herausforderung (-en)</h4>
+                                <p id="wotd-meaning" class="text-sm font-medium">Thử thách, sự thách thức</p>
+                                <p id="wotd-example" class="text-xs text-slate-500 dark:text-slate-400 italic">"Die B2-Prüfung ist eine große Herausforderung, aber machbar."</p>
+                            </div>
+                            <button onclick="speakWordOfTheDay()" class="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-md shadow-indigo-500/20">
+                                <i class="fa-solid fa-volume-high"></i>
+                                Nghe phát âm
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- 2. TỪ VỰNG -->
+                    <section id="vocab" class="space-y-5 hidden fade-in">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-2xl font-bold">Kho từ vựng B2</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Học và ôn tập từ vựng theo ngữ cảnh thực tế.</p>
+                            </div>
+                        </div>
+                        <div id="vocab-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    </section>
+
+                    <!-- 3. NGỮ PHÁP -->
+                    <section id="grammar" class="space-y-5 hidden fade-in">
+                        <div>
+                            <h3 class="text-2xl font-bold">Lộ trình Ngữ pháp B2</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Hệ thống hóa các cấu trúc nâng cao hay xuất hiện trong đề thi.</p>
+                        </div>
+                        <div id="grammar-container" class="space-y-3"></div>
+                    </section>
+
+                    <!-- 4. KỸ NĂNG -->
+                    <section id="skills" class="space-y-5 hidden fade-in">
+                        <div>
+                            <h3 class="text-2xl font-bold">Luyện 4 Kỹ năng</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Rèn luyện Đọc, Nghe, Viết và Nói theo tiêu chuẩn B2.</p>
+                        </div>
+                        <div id="skills-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-sm">
+                                Đang chờ nạp dữ liệu từ <code>mod-skills.js</code>...
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 5. LUYỆN ĐỀ -->
+                    <section id="exam" class="space-y-5 hidden fade-in">
+                        <div>
+                            <h3 class="text-2xl font-bold">Phòng Luyện Đề B2</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Kiểm tra trình độ với bài tập mô phỏng đề thi thật.</p>
+                        </div>
+                        <div id="exam-container" class="space-y-4">
+                            <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-sm">
+                                Đang chờ nạp dữ liệu từ <code>mod-exam.js</code>...
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
         </div>
-    </header>
+    </div>
 
-    <main id="main-content" class="flex-grow p-4 max-w-7xl w-full mx-auto">
-        <section id="dashboard" class="space-y-4">
-            <h2 class="text-2xl font-semibold">Chào mừng bạn trở lại!</h2>
-            <p>Chọn một module bên trên để bắt đầu học tập.</p>
-        </section>
-        <section id="vocab" class="space-y-4 hidden">
-            <h2 class="text-2xl font-semibold">Kho từ vựng</h2>
-            <div id="vocab-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </section>
-        <section id="grammar" class="space-y-4 hidden">
-            <h2 class="text-2xl font-semibold">Lộ trình Ngữ pháp</h2>
-            <div id="grammar-container" class="space-y-2"></div>
-        </section>
-    </main>
-
-    <footer class="bg-slate-800 border-t border-slate-700 p-4 text-center text-sm text-slate-400 mt-auto">
-        DeutschSprung B2 Modular Personal Edition
-    </footer>
-
+    <!-- Script điều khiển giao diện lõi -->
     <script>
+        const TAB_TITLES = {
+            dashboard: 'Tổng quan',
+            vocab: 'Kho từ vựng B2',
+            grammar: 'Ngữ pháp B2',
+            skills: 'Luyện 4 Kỹ năng',
+            exam: 'Luyện đề B2'
+        };
+
         function switchTab(tabId) {
-            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
+            // Ẩn tất cả section
+            document.querySelectorAll('#main-content section').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById(tabId);
+            if (target) target.classList.remove('hidden');
+
+            // Cập nhật tiêu đề header
+            document.getElementById('page-title').textContent = TAB_TITLES[tabId] || 'DeutschSprung B2';
+
+            // Đổi trạng thái active trên Sidebar
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold transition-all text-left bg-indigo-600 text-white shadow-md shadow-indigo-500/25';
+                } else {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition-all text-left text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100';
+                }
+            });
+
+            // Tự đóng sidebar trên màn hình nhỏ
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                toggleSidebar();
+            }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('ds_theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        }
+
+        function updateThemeUI(isDark) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            if (isDark) {
+                icon.className = 'fa-solid fa-moon text-indigo-400';
+                text.textContent = 'Chế độ tối';
+            } else {
+                icon.className = 'fa-solid fa-sun text-amber-500';
+                text.textContent = 'Chế độ sáng';
+            }
+        }
+
+        function speakWordOfTheDay() {
+            if (!('speechSynthesis' in window)) return;
+            const utterance = new SpeechSynthesisUtterance('die Herausforderung');
+            utterance.lang = 'de-DE';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Khởi tạo lời chào theo giờ, Streak và Theme
+        (function initUI() {
+            // Theme
+            const savedTheme = localStorage.getItem('ds_theme') || 'dark';
+            const isDark = savedTheme === 'dark';
+            document.documentElement.classList.toggle('dark', isDark);
+            updateThemeUI(isDark);
+
+            // Lời chào tiếng Đức theo giờ
+            const hour = new Date().getHours();
+            const greetingEl = document.getElementById('german-greeting');
+            if (hour < 11) greetingEl.textContent = 'Guten Morgen! ☀️';
+            else if (hour < 18) greetingEl.textContent = 'Guten Tag! 🇩🇪';
+            else greetingEl.textContent = 'Guten Abend! 🌙';
+
+            // Bộ đếm chuỗi ngày học (Streak)
+            const today = new Date().toDateString();
+            const lastVisit = localStorage.getItem('ds_last_visit');
+            let streak = parseInt(localStorage.getItem('ds_streak') || '1', 10);
+            if (lastVisit && lastVisit !== today) {
+                const diffDays = Math.round((new Date(today) - new Date(lastVisit)) / (1000 * 60 * 60 * 24));
+                streak = diffDays === 1 ? streak + 1 : 1;
+            }
+            localStorage.setItem('ds_last_visit', today);
+            localStorage.setItem('ds_streak', streak);
+            document.getElementById('streak-count').textContent = streak;
+
+            // Mặc định mở tab Tổng quan
+            switchTab('dashboard');
+        })();
     </script>
 
     <!-- Nhúng các module chức năng -->
