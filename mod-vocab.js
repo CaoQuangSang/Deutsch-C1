@@ -1,6 +1,6 @@
-// mod-vocab.js - Module Kho Từ Vựng A1-C1 + Tự Động Tạo Từ Vựng Bằng Gemini AI
+// mod-vocab.js - Module Kho Từ Vựng A1-C1 + Tự Động Tạo Từ Vựng Bằng Groq AI (Miễn Phí)
 (function () {
-    // 1. Tiêm CSS cho hiệu ứng lật thẻ 3D (đảm bảo luôn hoạt động mượt trên mọi trình duyệt)
+    // 1. Tiêm CSS cho hiệu ứng lật thẻ 3D
     if (!document.getElementById('vocab-3d-styles')) {
         const style = document.createElement('style');
         style.id = 'vocab-3d-styles';
@@ -47,35 +47,30 @@
     let isGeneratingAI = false;
     let aiStatusMsg = '';
 
-    // Lấy API Key (tự động đọc từ nhiều tên key phổ biến trong app-core.js nếu bạn đã lưu trước đó)
-    function getApiKey() {
-        return localStorage.getItem('ds_gemini_api_key') ||
-               localStorage.getItem('gemini_api_key') ||
-               localStorage.getItem('apiKey') || '';
+    function getGroqKey() {
+        return localStorage.getItem('ds_groq_api_key') || '';
     }
 
-    function saveApiKey(key) {
+    function saveGroqKey(key) {
         const cleanKey = key.trim();
-        localStorage.setItem('ds_gemini_api_key', cleanKey);
-        localStorage.setItem('gemini_api_key', cleanKey);
+        localStorage.setItem('ds_groq_api_key', cleanKey);
         return cleanKey;
     }
 
     function getAllVocab() {
-        // Đưa từ AI mới tạo lên đầu danh sách để dễ học ngay
         return [...aiVocabList, ...BASE_VOCAB_DATA];
     }
 
-    // 4. Hàm gọi Gemini AI để tự động sinh từ vựng
+    // 4. Hàm gọi Groq API (Llama 3.3 70B) để tự động sinh từ vựng
     async function generateVocabWithAI() {
         const keyInput = document.getElementById('ai-vocab-key');
         const levelInput = document.getElementById('ai-vocab-level');
         const topicInput = document.getElementById('ai-vocab-topic');
         const countInput = document.getElementById('ai-vocab-count');
 
-        let apiKey = keyInput ? saveApiKey(keyInput.value) : getApiKey();
+        let apiKey = keyInput ? saveGroqKey(keyInput.value) : getGroqKey();
         if (!apiKey) {
-            aiStatusMsg = '❌ Vui lòng nhập Gemini API Key trước khi tạo từ vựng.';
+            aiStatusMsg = '❌ Vui lòng nhập Groq API Key (bắt đầu bằng gsk_...) trước khi tạo từ vựng.';
             renderVocabSystem();
             return;
         }
@@ -84,10 +79,10 @@
         const topic = (topicInput && topicInput.value.trim()) ? topicInput.value.trim() : 'Đời sống & Công việc ở Đức';
         const count = countInput ? parseInt(countInput.value, 10) : 8;
 
-        const existingWords = getAllVocab().map(v => v.word).slice(0, 60).join(', ');
+        const existingWords = getAllVocab().map(v => v.word).slice(0, 50).join(', ');
 
         isGeneratingAI = true;
-        aiStatusMsg = `⏳ AI đang biên soạn ${count} từ vựng trình độ ${level} chủ đề "${topic}"...`;
+        aiStatusMsg = `⏳ Groq AI đang biên soạn ${count} từ vựng trình độ ${level} chủ đề "${topic}"...`;
         renderVocabSystem();
 
         const prompt = `Bạn là giáo viên tiếng Đức chuyên nghiệp. Hãy tạo chính xác ${count} từ vựng tiếng Đức trình độ ${level} về chủ đề "${topic}".
@@ -95,44 +90,52 @@ Yêu cầu:
 - KHÔNG trùng lặp với các từ sau: ${existingWords}
 - Danh từ PHẢI kèm giống (der/die/das) và dạng số nhiều, ví dụ: "die Voraussetzung (-en)".
 - Động từ mạnh/bất quy tắc ghi kèm chia cơ bản nếu cần.
-- Trả về DUY NHẤT một mảng JSON hợp lệ (không thêm markdown, không giải thích), mỗi phần tử có cấu trúc:
-[
-  {
-    "word": "từ tiếng Đức",
-    "meaning": "nghĩa tiếng Việt ngắn gọn, chính xác",
-    "exampleDe": "1 câu ví dụ tiếng Đức tự nhiên đúng trình độ ${level}",
-    "exampleVi": "dịch nghĩa tiếng Việt của câu ví dụ",
-    "topic": "${topic}",
-    "level": "${level}"
-  }
-]`;
+- Trả về DUY NHẤT một đối tượng JSON hợp lệ theo đúng cấu trúc sau:
+{
+  "words": [
+    {
+      "word": "từ tiếng Đức",
+      "meaning": "nghĩa tiếng Việt ngắn gọn, chính xác",
+      "exampleDe": "1 câu ví dụ tiếng Đức tự nhiên đúng trình độ ${level}",
+      "exampleVi": "dịch nghĩa tiếng Việt của câu ví dụ",
+      "topic": "${topic}",
+      "level": "${level}"
+    }
+  ]
+}`;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: 'application/json',
-                        temperature: 0.7
-                    }
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: 'You are a helpful German language teacher. Always respond with valid JSON.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    response_format: { type: 'json_object' },
+                    temperature: 0.7
                 })
             });
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error?.message || 'Lỗi kết nối Gemini API');
+                throw new Error(data.error?.message || 'Lỗi kết nối Groq API');
             }
 
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+            const rawText = data.choices?.[0]?.message?.content || '{}';
             const parsed = JSON.parse(rawText);
+            const wordArray = Array.isArray(parsed) ? parsed : (parsed.words || []);
 
-            if (!Array.isArray(parsed) || parsed.length === 0) {
+            if (!Array.isArray(wordArray) || wordArray.length === 0) {
                 throw new Error('AI không trả về danh sách từ vựng hợp lệ.');
             }
 
-            const newItems = parsed.map((item, idx) => ({
+            const newItems = wordArray.map((item, idx) => ({
                 id: 'ai_' + Date.now() + '_' + idx,
                 level: item.level || level,
                 topic: item.topic || topic,
@@ -222,17 +225,17 @@ Yêu cầu:
             return matchLvl && matchSearch;
         });
 
-        const savedKey = getApiKey();
+        const savedKey = getGroqKey();
 
         container.className = 'space-y-6 fade-in';
         container.innerHTML = `
-            <!-- Bảng Điều Khiển Tạo Từ Vựng AI -->
+            <!-- Bảng Điều Khiển Tạo Từ Vựng Groq AI -->
             <div class="bg-gradient-to-r from-indigo-950/90 via-slate-900 to-purple-950/90 p-5 rounded-2xl border border-indigo-500/30 shadow-lg text-white space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <h3 class="text-base font-extrabold flex items-center gap-2">
                             <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
-                            Tạo Từ Vựng Không Giới Hạn Bằng AI
+                            Tạo Từ Vựng Không Giới Hạn Bằng Groq AI (Miễn Phí)
                         </h3>
                         <p class="text-xs text-slate-300 mt-0.5">Tự động sinh từ vựng kèm giống, nghĩa và câu ví dụ chuẩn Đức, lưu vĩnh viễn trên máy.</p>
                     </div>
@@ -243,8 +246,8 @@ Yêu cầu:
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-3">
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">Gemini API Key</label>
-                        <input id="ai-vocab-key" type="password" value="${savedKey}" placeholder="Dán API Key (AIza...)"
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">Groq API Key</label>
+                        <input id="ai-vocab-key" type="password" value="${savedKey}" placeholder="Dán Key (gsk_...)"
                             class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 focus:border-indigo-400 focus:outline-none text-xs text-white" />
                     </div>
                     <div class="md:col-span-4">
