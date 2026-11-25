@@ -1,3 +1,4 @@
+Hãy mở file index.html trên GitHub, chọn chỉnh sửa và dán đoạn mã này vào để nhúng toàn bộ 5 module hoạt động cùng nhau:
 <!DOCTYPE html>
 <html lang="vi" class="h-full bg-slate-900">
 <head>
@@ -41,7 +42,7 @@
     </main>
 
     <footer class="bg-slate-800 border-t border-slate-700 p-4 text-center text-sm text-slate-400 mt-auto">
-        DeutschSprung B2 Personal Edition
+        DeutschSprung B2 Modular Personal Edition
     </footer>
 
     <script>
@@ -50,6 +51,12 @@
             document.getElementById(tabId).classList.remove('hidden');
         }
     </script>
+
+    <!-- Nhúng các module chức năng -->
+    <script src="app-core.js"></script>
+    <script src="mod-vocab.js"></script>
+    <script src="mod-grammar.js"></script>
+    <script src="mod-skills.js"></script>
+    <script src="mod-exam.js"></script>
 </body>
 </html>
-
